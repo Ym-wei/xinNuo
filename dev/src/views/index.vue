@@ -22,10 +22,6 @@
 
       }
     },
-
-    created() {
-      document.title = '杨昕诺'
-    },
     methods: {
 
     }

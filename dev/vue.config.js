@@ -25,6 +25,12 @@ module.exports = {
     config.resolve.alias
       .set('@$', resolve('/src'))
       .set('view', resolve('/src/views'))
+    config
+      .plugin('html')
+      .tap(args => {
+        args[0].title = '杨昕诺'
+        return args
+      })
   },
   // 生产环境是否生成 sourceMap 文件
   productionSourceMap: false
