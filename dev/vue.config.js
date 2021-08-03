@@ -4,24 +4,23 @@ function resolve(dir) {
   return path.join(__dirname, dir)
 }
 
-console.log('Prod :', Prod)
 module.exports = {
   publicPath: Prod ? '/xinNuo/' : '/',
   outputDir: '../docs',
   devServer: {
     port: 8081
   },
-  css: {
-    requireModuleExtension: true,
-    extract: true,
-    sourceMap: false,
-    loaderOptions: {
-      sass: {
-        prependData: () => {
-        }
-      }
-    }
-  },
+  // css: {
+  //   requireModuleExtension: true,
+  //   extract: true,
+  //   sourceMap: false,
+  //   loaderOptions: {
+  //     sass: {
+  //       prependData: () => {
+  //       }
+  //     }
+  //   }
+  // },
   chainWebpack: config => {
     config.resolve.alias
       .set('@$', resolve('/src'))
