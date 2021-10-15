@@ -5,7 +5,6 @@ import store from './store'
 import '@/mock'
 
 Vue.config.productionTip = false
-
 new Vue({
   router,
   store,

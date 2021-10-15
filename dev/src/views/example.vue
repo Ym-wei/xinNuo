@@ -10,7 +10,7 @@
 </template>
 
 <script>
-  import { apiGetUserInfo } from '@/api'
+  import { apiGetCommonUse } from '@/api'
   export default {
     name: 'example',
     components: {
@@ -49,7 +49,7 @@
     },
     methods: {
       async  getMock() {
-        const { data: { result } } = await apiGetUserInfo()
+        const { data: { result } } = await apiGetCommonUse()
         this.login = result
       },
       handle() {
