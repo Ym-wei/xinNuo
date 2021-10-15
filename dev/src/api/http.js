@@ -1,7 +1,6 @@
 
 import Axios, { CancelToken } from 'axios'
 import route from '@/router'
-
 /**
  * 默认axios，配置
  * @type {[type]}
@@ -11,11 +10,12 @@ const http = Axios.create({
 })
 
 const cancelTokenMap = {}
+const openMock = true
 
 //
-// if (process.env.NODE_ENV === 'development') {
-//   axios.defaults.baseURL = '/edu'
-// }
+if (process.env.NODE_ENV === 'development' && openMock) {
+  http.defaults.baseURL = '/mock'
+}
 
 http.interceptors.request.use(config => {
   config.headers.common['Content-Type'] = 'application/json;charset=UTF-8'
@@ -45,15 +45,17 @@ http.interceptors.request.use(config => {
  */
 http.interceptors.response.use(
   res => {
-    const { data: { code }, config } = res
+    const { data: { status }, config } = res
 
-    if (/geojson/.test(res.config.url)) {
-      return Promise.resolve(res.data)
+    if (openMock) {
+      const mockUrl = config.baseURL + config.url
+      console.clear()
+      console.log(`%c Mock: ${mockUrl}`, 'font-size: 18px; color: blue')
+      console.log('data :', JSON.parse(JSON.stringify(res.data.data.result)))
     }
-
-    if (~~code === 1) {
+    if (~~status === 200) {
       return Promise.resolve(res.data)
-    } else if (~~code === 17) {
+    } else if (~~status === 17) {
       route.push({ name: 'yidongData-noAuthentication' })
       return false
     } else {
