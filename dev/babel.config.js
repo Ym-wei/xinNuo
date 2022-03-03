@@ -26,13 +26,12 @@ module.exports = {
             'gauge', // 仪表盘 新增 h5 迁移
             'geo' // 地图 新增 待定
           ]
-          debugger
           name = name === 'statisticsBar' ? 'StatisticsLine' : name
           if (exclude.includes(name)) isVoid = true
           return `@web/chart/lib/theme/src/${isVoid ? 'void' : name}.scss`
         }
       },
-      'ymChart'
+      'webChart'
     ]
   ]
 }

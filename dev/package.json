@@ -4,15 +4,17 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
+    "build": "vue-cli-service build --report",
     "lint": "vue-cli-service lint"
   },
+  "sideEffects": false,
   "dependencies": {
-    "@web/chart": "^1.0.5",
+    "@ms/shared": "^1.0.1",
+    "@web/chart": "^1.0.6",
     "axios": "^0.21.4",
     "core-js": "^3.6.5",
     "echarts": "4.1.0",
-    "echarts-liquidfill": "^3.1.0",
+    "echarts-liquidfill": "^2.0.6",
     "echarts-wordcloud": "^2.0.0",
     "flv.js": "^1.5.0",
     "hls.js": "^0.14.17",
