@@ -25,10 +25,10 @@ const routes = [
   //   component: () => import(/* webpackChunkName: "asyncChart" */ '../views/echart/index.vue')
   // },
   // // 图表组件库测试页面
-  // {
-  //   path: '/ymChartExample',
-  //   component: () => import(/* webpackChunkName: "chartExample" */ '../views/echart/ymChartExample.vue')
-  // },
+  {
+    path: '/ymChartExample',
+    component: () => import(/* webpackChunkName: "chartExample" */ '../views/echart/ymChartExample.vue')
+  },
   {
     path: '/shared',
     component: () => import(/* webpackChunkName: "share" */ 'view/treeshaking/shared.vue')
