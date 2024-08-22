@@ -10,9 +10,6 @@ const CompressionPlugin = require('compression-webpack-plugin')
 const { VantResolver } = require('unplugin-vue-components/resolvers')
 const ComponentsPlugin = require('unplugin-vue-components/webpack')
 
-const target = process.env.VUE_APP_DEV_API
-  ? process.env.VUE_APP_DEV_API
-  : 'https://sit.izhongpei.com'
 const resolve = (dir) => path.join(__dirname, dir)
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = process.env.NODE_ENV === 'production'
