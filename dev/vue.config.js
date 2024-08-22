@@ -30,7 +30,7 @@ const cdnConfig = {
 }
 
 module.exports = {
-  publicPath:  isDev ? '/' : '/xinNuo/',
+  publicPath: '/xinNuo/',
   outputDir: '../docs',
   assetsDir: 'static', //  outputDir的静态资源(js、css、img、fonts)目录
   lintOnSave: isDev, // eslint 检测
