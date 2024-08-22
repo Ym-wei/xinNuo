@@ -1,4 +1,4 @@
-import {validateNull} from "./function";
+import { validateNull } from './function'
 
 const keyName = 'robot-'
 /**

@@ -7,7 +7,7 @@
     <div class="wrap">
       <div
         class="btn"
-        @click="count--"
+        @click="changeCount('del')"
       >
         减少
       </div>
@@ -19,7 +19,7 @@
       </div>
       <div
         class="btn add"
-        @click="count++"
+        @click="changeCount('add')"
       >
         增加
       </div>
@@ -57,8 +57,20 @@
 <script setup>
   import Timer from './components/timer.vue'
   import { ref } from 'vue'
+  import { getStore, setStore } from '@/utils/store'
 
-  const count = ref(0)
+  const countKey = 'count_key'
+  const changeCount = (type) => {
+    type === 'add' ? count.value++ : count.value--
+
+    setStore({
+      name: countKey,
+      content: count.value
+    })
+  }
+
+  const getCount = getStore({ name: countKey }) || 0
+  const count = ref(getCount)
 
   const confirmCount = ref(0)
   const resetCount = () => {
@@ -66,6 +78,10 @@
     if (confirmCount.value >= 2) {
       count.value = 0
       confirmCount.value = 0
+      setStore({
+        name: countKey,
+        content: count.value
+      })
     }
   }
 
