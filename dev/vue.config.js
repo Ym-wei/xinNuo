@@ -29,7 +29,7 @@ const cdnConfig = {
 module.exports = {
   publicPath: '/xinNuo/',
   outputDir: '../docs',
-  assetsDir: 'static', //  outputDir的静态资源(js、css、img、fonts)目录
+  // assetsDir: 'static', //  outputDir的静态资源(js、css、img、fonts)目录
   lintOnSave: isDev, // eslint 检测
   productionSourceMap: false, // 如果你不需要生产环境的 source map，可以将其设置为 false 以加速生产环境构建。
   css: {
