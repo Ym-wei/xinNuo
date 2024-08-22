@@ -8,7 +8,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import PageRouter from './page'
 
 const router = createRouter({
-  history: createWebHistory('/h5/'),
+  history: createWebHistory('/'),
   routes: [...PageRouter]
 })
 

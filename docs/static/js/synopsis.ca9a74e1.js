@@ -1,0 +1,1 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["synopsis"],{"88b0":function(n,s,c){"use strict";c.r(s);var t=c("7a23");const e={class:"container"};function o(n,s){return Object(t["n"])(),Object(t["d"])("div",e," 121212 ")}var r=c("d959"),a=c.n(r);const i={},d=a()(i,[["render",o]]);s["default"]=d}}]);
