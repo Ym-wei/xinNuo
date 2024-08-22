@@ -1,0 +1,34 @@
+{
+  "name": "xinnuo",
+  "version": "1.0.0",
+  "description": "杨昕诺",
+  "main": ".eslintrc.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-eslint": "^5.0.4",
+    "@vue/eslint-config-standard": "^6.1.0",
+    "babel-eslint": "^8.2.2",
+    "eslint": "^8.13.0",
+    "eslint-plugin-html": "^6.1.2",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-standard": "^4.0.0",
+    "eslint-plugin-vue": "^8.6.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ym-wei/xinNuo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ym-wei/xinNuo/issues"
+  },
+  "homepage": "https://github.com/Ym-wei/xinNuo#readme"
+}
