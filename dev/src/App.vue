@@ -1,8 +1,10 @@
 <template>
-  <div id="app">
-    <router-view/>
-  </div>
+  <router-view />
 </template>
-<style lang="scss">
-  @import '~@/assets/scss/reset.scss';
+
+<script setup>
+</script>
+
+<style>
+@import "./assets/scss/main.scss";
 </style>
