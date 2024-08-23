@@ -15,6 +15,7 @@
 </template>
 
 <script setup>
+  import mp3 from '../C50CD5533AE1.mp3'
   import { ref, computed, onUnmounted, watch } from 'vue'
 
   const props = defineProps({
@@ -30,7 +31,19 @@
 
   const time = ref(props.initialTime)
   const timer = ref(null)
+  const audio = ref(null)
 
+  const setAudio = () => {
+    audio.value = new Audio(mp3)
+  }
+  setAudio()
+
+  // 播放铃声
+  const playAlarm = () => {
+    if (audio.value) {
+      audio.value.play()
+    }
+  }
   const T = computed(() => {
     const minutes = Math.floor((time.value % 3600) / 60).toString().padStart(2, '0')
     const seconds = (time.value % 60).toString().padStart(2, '0')
@@ -48,6 +61,7 @@
           time.value--
         } else {
           pauseTimer()
+          playAlarm()
         }
       } else {
         time.value++
