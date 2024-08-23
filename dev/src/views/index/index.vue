@@ -28,16 +28,16 @@
       <div class="desc"></div>
       组间休息
     </div>
-    <div class="time-tit">
-      顺计时
-    </div>
-    <Timer
-      :initial-time="0"
-      :countdown="false"
-    />
-    <div class="time-tit">
-      倒计时
-    </div>
+    <!--    <div class="time-tit">-->
+    <!--      顺计时-->
+    <!--    </div>-->
+    <!--    <Timer-->
+    <!--      :initial-time="0"-->
+    <!--      :countdown="false"-->
+    <!--    />-->
+    <!--    <div class="time-tit">-->
+    <!--      倒计时-->
+    <!--    </div>-->
     <Timer
       :initial-time="countDownTime"
       :countdown="true"
@@ -47,7 +47,7 @@
         v-for="item in countDownTimeList"
         :key="item"
         class="item"
-        @click="countDownTime = item"
+        @click="clickTimeDown(item)"
       >
         {{ item }}
       </div>
@@ -72,7 +72,8 @@
   const getCount = getStore({ name: countKey }) || 0
   const count = ref(getCount)
 
-  const confirmCount = ref(0)
+  const getT = getStore({ name: 'key_time' }) || 60
+  const confirmCount = ref(getT)
   const resetCount = () => {
     confirmCount.value++
     if (confirmCount.value >= 2) {
@@ -90,6 +91,14 @@
   const countDownTimeList = ref([
     30, 60, 90, 120
   ])
+
+  const clickTimeDown = (time) => {
+    countDownTime.value = time
+    setStore({
+      name: 'key_time',
+      content: countDownTime.value
+    })
+  }
 </script>
 <style lang="scss" scoped>
 .wrapper {
