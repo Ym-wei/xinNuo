@@ -21,11 +21,11 @@ export default [
     }
   },
   {
-    path: '/synopsis/list',
-    name: 'synopsisList',
-    component: () => import(/* webpackChunkName: "synopsis" */ 'views/synopsis/index'),
+    path: '/json/index',
+    name: 'jsonIndex',
+    component: () => import(/* webpackChunkName: "json" */ '@/viewPc/json/index'),
     meta: {
-      title: '分类',
+      title: 'JSON美化',
       keepAlive: true,
       isTab: false,
       isAuth: false
