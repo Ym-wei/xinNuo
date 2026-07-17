@@ -14,24 +14,26 @@ const resolve = (dir) => path.join(__dirname, dir)
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = process.env.NODE_ENV === 'production'
 
-const cdnConfig = {
-  css: [
-    'https://cdn.bootcdn.net/ajax/libs/vant/4.0.10/index.min.css'
-  ],
-  js: [
-    'https://cdn.bootcdn.net/ajax/libs/vue/3.2.31/vue.global.prod.js',
-    'https://cdn.bootcdn.net/ajax/libs/axios/0.21.1/axios.min.js',
-    'https://cdn.bootcdn.net/ajax/libs/vue-router/4.0.10/vue-router.global.prod.min.js',
-    'https://cdn.bootcdn.net/ajax/libs/vant/4.0.10/vant.min.js'
-  ]
-}
+// 不再使用外部 CDN，避免 CDN 慢/被墙/版本错配导致白屏
+// 所有依赖都走本地打包
+// const cdnConfig = {
+//   css: [
+//     'https://cdn.bootcdn.net/ajax/libs/vant/4.0.10/index.min.css'
+//   ],
+//   js: [
+//     'https://cdn.bootcdn.net/ajax/libs/vue/3.2.31/vue.global.prod.js',
+//     'https://cdn.bootcdn.net/ajax/libs/axios/0.21.1/axios.min.js',
+//     'https://cdn.bootcdn.net/ajax/libs/vue-router/4.0.10/vue-router.global.prod.min.js',
+//     'https://cdn.bootcdn.net/ajax/libs/vant/4.0.10/vant.min.js'
+//   ]
+// }
 
 module.exports = {
   publicPath: '/xinNuo/',
   outputDir: '../docs',
-  // assetsDir: 'static', //  outputDir的静态资源(js、css、img、fonts)目录
-  lintOnSave: isDev, // eslint 检测
-  productionSourceMap: false, // 如果你不需要生产环境的 source map，可以将其设置为 false 以加速生产环境构建。
+  // assetsDir: 'static',
+  lintOnSave: isDev,
+  productionSourceMap: false,
   css: {
     requireModuleExtension: true
   },
@@ -58,20 +60,19 @@ module.exports = {
           })
         )
         .end()
-      // 生产环境注入cdn
+      // 生产环境不再注入 CDN；保留 title 配置
       config.plugin('html')
         .tap(args => {
-          args[0].cdn = cdnConfig
           args[0].title = '杨昕诺'
           return args
         })
-        // 用cdn方式引入
-      config.externals = {
-        vue: 'Vue',
-        'vue-router': 'VueRouter',
-        axios: 'axios',
-        vant: 'vant'
-      }
+      // 不再设置 externals，库都走本地打包
+      // config.externals = {
+      //   vue: 'Vue',
+      //   'vue-router': 'VueRouter',
+      //   axios: 'axios',
+      //   vant: 'vant'
+      // }
     }
     config.module
       .rule('images')
