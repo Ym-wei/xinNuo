@@ -1,6 +1,5 @@
 .DS_Store
 dev/node_modules
-/dist
 node_modules
 
 
