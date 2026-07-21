@@ -1,20 +1,29 @@
 <template>
-  <div class="json-tool" :class="{ 'is-split': splitMode }">
+  <div class="json-tool" :class="{ 'is-split': columnCount >= 2, 'is-triple': columnCount === 3 }">
     <!-- ========== 顶部标题栏 ========== -->
     <div class="tool-header">
       <div class="header-left">
         <h1 class="header-title">JSON 美化工具</h1>
-        <span class="header-subtitle">PC端 · vue-json-pretty · 双栏对比</span>
+        <span class="header-subtitle">PC端 · vue-json-pretty · 多栏对比</span>
       </div>
       <div class="header-actions">
-        <button
-          class="action-btn"
-          :class="{ active: splitMode }"
-          @click="toggleSplitMode"
-        >
-          <span class="action-icon">⇔</span>
-          <span>{{ splitMode ? '单栏' : '双栏' }}</span>
-        </button>
+        <div class="column-switch">
+          <button
+            class="action-btn"
+            :class="{ active: columnCount === 1 }"
+            @click="setColumnCount(1)"
+          >单栏</button>
+          <button
+            class="action-btn"
+            :class="{ active: columnCount === 2 }"
+            @click="setColumnCount(2)"
+          >双栏</button>
+          <button
+            class="action-btn"
+            :class="{ active: columnCount === 3 }"
+            @click="setColumnCount(3)"
+          >三栏</button>
+        </div>
         <button
           class="action-btn"
           :class="{ active: showHistory }"
@@ -65,7 +74,7 @@
       </Transition>
 
       <!-- ===== 单栏模式 ===== -->
-      <template v-if="!showHistory && !splitMode">
+      <template v-if="!showHistory && columnCount === 1">
         <!-- 输入面板 -->
         <div v-show="!inputHidden" class="input-section">
           <div class="panel-card">
@@ -120,8 +129,8 @@
         </div>
       </template>
 
-      <!-- ===== 双栏模式：两个独立面板，可拖拽调整宽度 ===== -->
-      <template v-if="!showHistory && splitMode">
+      <!-- ===== 多栏模式：双栏/三栏共用 ===== -->
+      <template v-if="!showHistory && columnCount >= 2">
         <div
           class="split-panels"
           ref="splitContainerRef"
@@ -130,7 +139,7 @@
           @mouseleave="stopSplitResize"
         >
           <!-- 左侧面板 -->
-          <div class="split-pane" :style="{ width: 'calc(' + leftPaneWidth + '% - 4px)' }">
+          <div class="split-pane" :style="{ width: leftPaneStyle }">
             <div class="pane-header">
               <span class="pane-label">📄 左侧 · 美化结果</span>
               <div class="pane-header-actions">
@@ -173,15 +182,66 @@
             </div>
           </div>
 
-          <!-- 拖拽分隔条 -->
-          <div class="split-divider" @mousedown.prevent="startSplitResize">
+          <!-- 拖拽分隔条 1 -->
+          <div class="split-divider" @mousedown.prevent="startSplitResize($event, 1)">
             <span class="split-divider-dots">⋮⋮</span>
           </div>
 
+          <!-- 中间面板（仅三栏） -->
+          <template v-if="columnCount === 3">
+            <div class="split-pane" :style="{ width: middlePaneStyle }">
+              <div class="pane-header">
+                <span class="pane-label">📄 中间 · 美化结果</span>
+                <div class="pane-header-actions">
+                  <button v-if="middleInputHidden" class="btn btn-outline btn-xs" @click="middleInputHidden = false">↩ 还原</button>
+                  <button v-if="middleParsedJson" class="btn btn-success btn-xs" @click="copyMiddleResult">📋 复制</button>
+                  <button v-if="middleParsedJson" class="btn btn-secondary btn-xs" @click="toggleMiddleCollapse">
+                    {{ middleCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
+                  </button>
+                </div>
+              </div>
+              <textarea
+                v-show="!middleInputHidden"
+                v-model="middleInput"
+                class="pane-input"
+                placeholder='粘贴另一个 JSON…'
+                spellcheck="false"
+              ></textarea>
+              <div class="pane-actions">
+                <button class="btn btn-primary btn-sm" @click="formatMiddle">✨ 美化</button>
+                <button class="btn btn-outline btn-sm" @click="clearMiddle">🗑️ 清空</button>
+              </div>
+              <div class="pane-tree-area">
+                <div v-if="middleParsedJson" class="pane-tree-scroll">
+                  <vue-json-pretty
+                    :key="`middle-${middleTreeRevision}`"
+                    :data="middleParsedJson"
+                    :deep="middleCollapsed ? 0 : 99"
+                    :show-line="false"
+                    :show-icon="true"
+                    :show-double-quotes="true"
+                    :highlight-mouseover-node="true"
+                    :selectable-type="true"
+                    :collapsed-on-click-branch="true"
+                    class="json-tree"
+                  />
+                </div>
+                <div v-else class="pane-empty">
+                  <span>粘贴 JSON 后点击 ✨ 美化</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 拖拽分隔条 2 -->
+            <div class="split-divider" @mousedown.prevent="startSplitResize($event, 2)">
+              <span class="split-divider-dots">⋮⋮</span>
+            </div>
+          </template>
+
           <!-- 右侧面板 -->
-          <div class="split-pane" :style="{ width: 'calc(' + (100 - leftPaneWidth) + '% - 4px)' }">
+          <div class="split-pane" :style="{ width: rightPaneStyle }">
             <div class="pane-header">
-              <span class="pane-label">📄 右侧 · 美化结果</span>
+              <span class="pane-label">📄 {{ columnCount === 3 ? '右侧' : '右侧' }} · 美化结果</span>
               <div class="pane-header-actions">
                 <button v-if="rightInputHidden" class="btn btn-outline btn-xs" @click="rightInputHidden = false">↩ 还原</button>
                 <button v-if="rightParsedJson" class="btn btn-success btn-xs" @click="copyRightResult">📋 复制</button>
@@ -259,6 +319,11 @@ const leftParsedJson = ref(null)
 const leftCollapsed = ref(false)
 const leftTreeRevision = ref(0)
 const leftInputHidden = ref(false)
+const middleInput = ref('')
+const middleParsedJson = ref(null)
+const middleCollapsed = ref(false)
+const middleTreeRevision = ref(0)
+const middleInputHidden = ref(false)
 const rightInput = ref('')
 const rightParsedJson = ref(null)
 const rightCollapsed = ref(false)
@@ -269,20 +334,42 @@ const rightInputHidden = ref(false)
 const errorMsg = ref('')
 const copySuccess = ref(false)
 const showHistory = ref(false)
-const splitMode = ref(false)
+const columnCount = ref(1) // 1=单栏 2=双栏 3=三栏
 const historyList = ref([])
 
-// ============ 双栏宽度拖拽 ============
+// 多栏宽度拖拽 ============
 const splitContainerRef = ref(null)
-const leftPaneWidth = ref(50)
+// divider1Position/divider2Position 分别为两个分隔条距左边缘的百分比
+// 2栏默认 50，3栏默认 33.33/66.67，进对应模式时由 setColumnCount 重置
+const divider1Position = ref(50)
+const divider2Position = ref(66.67)
 const isResizing = ref(false)
+const resizingDivider = ref(1) // 当前正在拖哪个分隔条（1 或 2）
 let startX = 0
-let startWidth = 50
+let startDivider1 = 50
+let startDivider2 = 75
 
-function startSplitResize(e) {
+// 三栏面板宽度计算（左右各扣 4px 让出分隔条）
+const leftPaneStyle = computed(() => `calc(${divider1Position.value}% - 4px)`)
+const middlePaneStyle = computed(() => {
+  if (columnCount.value === 3) {
+    return `calc(${divider2Position.value - divider1Position.value}% - 8px)`
+  }
+  return '0px'
+})
+const rightPaneStyle = computed(() => {
+  if (columnCount.value === 3) {
+    return `calc(${100 - divider2Position.value}% - 4px)`
+  }
+  return `calc(${100 - divider1Position.value}% - 4px)`
+})
+
+function startSplitResize(e, which) {
   isResizing.value = true
+  resizingDivider.value = which
   startX = e.clientX
-  startWidth = leftPaneWidth.value
+  startDivider1 = divider1Position.value
+  startDivider2 = divider2Position.value
   document.body.style.cursor = 'col-resize'
   document.body.style.userSelect = 'none'
   if (splitContainerRef.value) {
@@ -293,11 +380,26 @@ function startSplitResize(e) {
 function onSplitResize(e) {
   if (!isResizing.value || !splitContainerRef.value) return
   const rect = splitContainerRef.value.getBoundingClientRect()
-  const dx = e.clientX - startX
-  const pct = (dx / rect.width) * 100
-  let newWidth = startWidth + pct
-  newWidth = Math.max(20, Math.min(80, newWidth))
-  leftPaneWidth.value = newWidth
+  const dxPct = ((e.clientX - startX) / rect.width) * 100
+  const MIN = 15 // 任何面板至少 15% 宽
+
+  if (resizingDivider.value === 1) {
+    // 拖动分隔条 1
+    let newPos = startDivider1 + dxPct
+    newPos = Math.max(MIN, Math.min(100 - MIN, newPos))
+    // 若在三栏模式，要保证 newPos < divider2 - MIN
+    if (columnCount.value === 3) {
+      newPos = Math.min(newPos, startDivider2 - MIN)
+    }
+    divider1Position.value = newPos
+  } else {
+    // 拖动分隔条 2
+    let newPos = startDivider2 + dxPct
+    newPos = Math.max(MIN, Math.min(100 - MIN, newPos))
+    // 必须 > divider1 + MIN
+    newPos = Math.max(newPos, startDivider1 + MIN)
+    divider2Position.value = newPos
+  }
 }
 
 function stopSplitResize() {
@@ -410,6 +512,16 @@ function formatRight() {
   upsertHistory(parsed) // 自动保存
 }
 
+function formatMiddle() {
+  const trimmed = middleInput.value.trim()
+  if (!trimmed) { showError('中间请输入 JSON'); return }
+  const parsed = tryParseJson(trimmed)
+  if (parsed === undefined) { showError('中间 JSON 格式错误'); return }
+  middleParsedJson.value = parsed
+  middleInputHidden.value = true // 隐藏输入区
+  upsertHistory(parsed) // 自动保存
+}
+
 function clearLeft() {
   leftInput.value = ''
   leftParsedJson.value = null
@@ -426,6 +538,14 @@ function clearRight() {
   rightInputHidden.value = false // 还原输入区
 }
 
+function clearMiddle() {
+  middleInput.value = ''
+  middleParsedJson.value = null
+  middleCollapsed.value = false
+  middleTreeRevision.value++
+  middleInputHidden.value = false // 还原输入区
+}
+
 function toggleLeftCollapse() {
   leftCollapsed.value = !leftCollapsed.value
   leftTreeRevision.value++
@@ -434,6 +554,11 @@ function toggleLeftCollapse() {
 function toggleRightCollapse() {
   rightCollapsed.value = !rightCollapsed.value
   rightTreeRevision.value++
+}
+
+function toggleMiddleCollapse() {
+  middleCollapsed.value = !middleCollapsed.value
+  middleTreeRevision.value++
 }
 
 async function copyLeftResult() {
@@ -446,30 +571,90 @@ async function copyRightResult() {
   await copyText(JSON.stringify(rightParsedJson.value, null, 2))
 }
 
+async function copyMiddleResult() {
+  if (!middleParsedJson.value) return
+  await copyText(JSON.stringify(middleParsedJson.value, null, 2))
+}
+
 // ============ 模式切换 ============
-function toggleSplitMode() {
-  splitMode.value = !splitMode.value
-  if (splitMode.value) {
-    // 单栏 → 双栏：把当前内容带到左侧
+function setColumnCount(n) {
+  if (columnCount.value === n) return
+  const prev = columnCount.value
+  columnCount.value = n
+
+  // 状态迁移：保证用户内容不丢失
+  if (prev === 1 && n === 2) {
+    // 单栏 → 双栏：主内容进左；右栏空白；分隔条复位到 50 均分
     leftInput.value = jsonInput.value
     leftParsedJson.value = parsedJson.value
-    leftInputHidden.value = inputHidden.value || false
+    leftInputHidden.value = inputHidden.value
+    leftCollapsed.value = false
     rightInput.value = ''
     rightParsedJson.value = null
     rightInputHidden.value = false
-  } else {
-    // 双栏 → 单栏：把左侧内容带回
+    rightCollapsed.value = false
+    divider1Position.value = 50
+  } else if (prev === 2 && n === 1) {
+    // 双栏 → 单栏：左侧回主
     jsonInput.value = leftInput.value
     parsedJson.value = leftParsedJson.value
     inputHidden.value = leftInputHidden.value
-    allCollapsed.value = false
-    // 清理双栏状态
+    allCollapsed.value = leftCollapsed.value
+    // 清空双栏状态
     leftInput.value = ''
     leftParsedJson.value = null
     leftInputHidden.value = false
+    leftCollapsed.value = false
     rightInput.value = ''
     rightParsedJson.value = null
     rightInputHidden.value = false
+    rightCollapsed.value = false
+  } else if (prev === 2 && n === 3) {
+    // 双栏 → 三栏：左/右保留；中间新增空白；分隔条复位到 33.33/66.67 三等分
+    divider1Position.value = 33.33
+    divider2Position.value = 66.67
+    middleInput.value = ''
+    middleParsedJson.value = null
+    middleInputHidden.value = false
+    middleCollapsed.value = false
+  } else if (prev === 3 && n === 2) {
+    // 三栏 → 双栏：左 + 中间 → 合并到左侧；右侧保留；分隔条复位 50
+    if (middleInput.value || middleParsedJson.value) {
+      if (leftInput.value && middleInput.value) {
+        leftInput.value = `${leftInput.value}\n/* 中间面板 JSON */\n${middleInput.value}`
+      } else if (middleInput.value) {
+        leftInput.value = middleInput.value
+      }
+      const parsed = tryParseJson(leftInput.value)
+      if (parsed !== undefined) {
+        leftParsedJson.value = parsed
+        leftInputHidden.value = true
+      }
+    }
+    middleInput.value = ''
+    middleParsedJson.value = null
+    middleInputHidden.value = false
+    middleCollapsed.value = false
+    divider1Position.value = 50
+  } else if (prev === 3 && n === 1) {
+    // 三栏 → 单栏：中间回主；左/右清空
+    jsonInput.value = middleInput.value || leftInput.value || rightInput.value
+    parsedJson.value = middleParsedJson.value || leftParsedJson.value || rightParsedJson.value
+    inputHidden.value = middleInputHidden.value
+    allCollapsed.value = middleCollapsed.value
+    // 清空多栏状态
+    leftInput.value = ''
+    leftParsedJson.value = null
+    leftInputHidden.value = false
+    leftCollapsed.value = false
+    middleInput.value = ''
+    middleParsedJson.value = null
+    middleInputHidden.value = false
+    middleCollapsed.value = false
+    rightInput.value = ''
+    rightParsedJson.value = null
+    rightInputHidden.value = false
+    rightCollapsed.value = false
   }
 }
 
@@ -516,9 +701,22 @@ function upsertHistory(data) {
 function loadFromHistory(item) {
   jsonInput.value = item.content
   showHistory.value = false
-  splitMode.value = false
+  columnCount.value = 1
   parsedJson.value = null
   allCollapsed.value = false
+  // 清空多栏状态
+  leftInput.value = ''
+  leftParsedJson.value = null
+  leftInputHidden.value = false
+  leftCollapsed.value = false
+  middleInput.value = ''
+  middleParsedJson.value = null
+  middleInputHidden.value = false
+  middleCollapsed.value = false
+  rightInput.value = ''
+  rightParsedJson.value = null
+  rightInputHidden.value = false
+  rightCollapsed.value = false
   nextTick(() => formatJson())
 }
 
@@ -559,7 +757,7 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 
 // ============ 全局容器 ============
 .json-tool {
-  max-width: 90vw;
+  max-width: 960px; // 单栏：固定宽度居中
   margin: 0 auto;
   padding: 12px;
   height: 100vh;
@@ -614,6 +812,27 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .header-actions { display: flex; gap: 8px; }
+
+// 多栏切换器（分段控件）
+.column-switch {
+  display: inline-flex;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  background: $bg-white;
+
+  .action-btn {
+    border: none;
+    border-radius: 0;
+    padding: 8px 14px;
+    border-right: 1px solid $border;
+    &:last-child { border-right: none; }
+    &.active {
+      background: $primary;
+      color: #fff;
+    }
+  }
+}
 
 .action-btn {
   display: flex;
