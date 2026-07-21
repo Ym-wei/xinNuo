@@ -60,7 +60,7 @@
                   <span class="history-index">#{{ historyList.length - index }}</span>
                   <span class="history-time">{{ item.time }}</span>
                 </div>
-                <div class="history-preview">{{ item.preview }}</div>
+                <div class="history-preview" :title="item.content">{{ item.preview }}</div>
                 <button class="history-delete" @click.stop="deleteHistoryItem(item.id)" title="删除">✕</button>
               </div>
               <div v-if="historyList.length === 0" class="history-empty">
@@ -674,10 +674,11 @@ function saveHistory() {
 // 通用 upsert：先删掉重复内容，再 push（移到列表末尾/最新位置）
 function upsertHistory(data) {
   if (data === null || data === undefined) return
+  const max = 1500
   const formatted = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
   const now = new Date()
   const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
-  const preview = formatted.length > 80 ? formatted.substring(0, 80) + '...' : formatted
+  const preview = formatted.length > max ? formatted.substring(0, max) + '...' : formatted
 
   // 删掉所有重复内容
   historyList.value = historyList.value.filter(item => item.content !== formatted)
@@ -1134,7 +1135,6 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   flex: 1;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
   font-size: 13px; color: $text-secondary;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 .history-delete {
