@@ -577,18 +577,6 @@ function gotoPrevMatch() {
   scrollToCurrent()
 }
 
-// 当关键词变化 / 面板数量 / 折叠状态 / 树版本号变化时，重新收集 match elements
-watch(
-  [globalSearch, columnCount, treeRevision, leftTreeRevision, middleTreeRevision, rightTreeRevision],
-  () => {
-    // DOM 更新后再收集（mark 是 renderNodeKey 渲染出来的）
-    nextTick(() => {
-      // 还要等 vue-json-pretty 完成内部渲染，再多一帧
-      requestAnimationFrame(() => collectMatchElements())
-    })
-  }
-)
-
 // ============ 通用状态 ============
 const errorMsg = ref('')
 const copySuccess = ref(false)
@@ -680,6 +668,20 @@ const reversedHistory = computed(() => {
 })
 
 // ============ 生命周期 ============
+// 当关键词变化 / 面板数量 / 折叠状态 / 树版本号变化时，重新收集 match elements
+// 注意：watch 的 source 数组在调用 watch() 时立即求值，所以这里必须放在
+// 所有被引用的 ref（globalSearch / columnCount / 4 个 treeRevision）声明之后
+watch(
+  [globalSearch, columnCount, treeRevision, leftTreeRevision, middleTreeRevision, rightTreeRevision],
+  () => {
+    // DOM 更新后再收集（mark 是 renderNodeKey 渲染出来的）
+    nextTick(() => {
+      // 还要等 vue-json-pretty 完成内部渲染，再多一帧
+      requestAnimationFrame(() => collectMatchElements())
+    })
+  }
+)
+
 onMounted(() => {
   loadHistory()
   // Ctrl/Cmd + F 快捷键：聚焦并全选 header 中的全局搜索框
