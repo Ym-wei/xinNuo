@@ -13,8 +13,28 @@
             type="text"
             class="search-input"
             placeholder="搜索 key 或 value…（全局生效）"
+            @keydown.enter="gotoNextMatch"
+            @keydown.shift.enter="gotoPrevMatch"
           />
-          <button v-if="globalSearch" class="search-clear" @click="globalSearch = ''" title="清空搜索">✕</button>
+          <!-- 命中计数器 + 上下定位按钮 -->
+          <span v-if="globalSearch" class="search-meta">
+            <span class="search-position" :title="`共 ${totalMatchCount} 个匹配`">
+              {{ globalCurrentIndex > 0 ? globalCurrentIndex : 0 }} / {{ totalMatchCount }}
+            </span>
+            <button
+              class="search-nav"
+              :disabled="totalMatchCount === 0"
+              title="上一个 (Shift+Enter)"
+              @click="gotoPrevMatch"
+            >↑</button>
+            <button
+              class="search-nav"
+              :disabled="totalMatchCount === 0"
+              title="下一个 (Enter)"
+              @click="gotoNextMatch"
+            >↓</button>
+            <button class="search-clear" @click="globalSearch = ''" title="清空搜索">✕</button>
+          </span>
         </div>
       </div>
       <div class="header-actions">
@@ -341,7 +361,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, onBeforeUnmount, h } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch, h } from 'vue'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 
@@ -488,6 +508,86 @@ const rightInputHidden = ref(false)
 const rightSearchCount = computed(() => countMatchesInData(rightParsedJson.value, globalSearch.value))
 const rightRenderKey = makeKeyRendererRef(globalSearch)
 const rightRenderValue = makeValueRendererRef(globalSearch)
+
+// ============ 全局搜索：上下定位 ============
+// 所有可见面板里 <mark class="search-match"> 的 DOM 引用数组（按 DOM 顺序排列）
+const matchElements = ref([])
+// 当前激活的匹配项（1-based，0 表示未选中）
+const globalCurrentIndex = ref(0)
+
+// 全局总命中数（4 个面板累加）
+const totalMatchCount = computed(() =>
+  singleSearchCount.value + leftSearchCount.value + middleSearchCount.value + rightSearchCount.value
+)
+
+// 收集当前可见的所有 <mark class="search-match"> 元素，按 DOM 顺序
+function collectMatchElements() {
+  const els = []
+  const wrappers = document.querySelectorAll('.json-tree-wrapper')
+  wrappers.forEach(w => {
+    w.querySelectorAll('mark.search-match').forEach(m => els.push(m))
+  })
+  matchElements.value = els
+  // 给每个元素打上全局序号
+  els.forEach((el, i) => el.setAttribute('data-match-index', String(i + 1)))
+  // 如果当前激活位置超出范围，重置
+  if (globalCurrentIndex.value > els.length) {
+    globalCurrentIndex.value = els.length > 0 ? 1 : 0
+  } else if (globalCurrentIndex.value === 0 && els.length > 0) {
+    // 首次出现匹配，默认选中第一个
+    globalCurrentIndex.value = 1
+  }
+  // 同步高亮
+  highlightCurrentMatch()
+}
+
+// 把当前激活的 mark 加上 .search-current 类，其他移除
+function highlightCurrentMatch() {
+  matchElements.value.forEach((el, i) => {
+    if (i + 1 === globalCurrentIndex.value) el.classList.add('search-current')
+    else el.classList.remove('search-current')
+  })
+}
+
+// 滚动到当前激活的 match（带一点偏移让上下文可见）
+function scrollToCurrent() {
+  const idx = globalCurrentIndex.value
+  if (idx <= 0 || idx > matchElements.value.length) return
+  const el = matchElements.value[idx - 1]
+  if (!el) return
+  // 找最近的滚动容器（pane 或 tree-wrapper），用 scrollIntoView
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+// 下一个匹配
+function gotoNextMatch() {
+  const total = matchElements.value.length
+  if (total === 0) return
+  globalCurrentIndex.value = globalCurrentIndex.value >= total ? 1 : globalCurrentIndex.value + 1
+  highlightCurrentMatch()
+  scrollToCurrent()
+}
+
+// 上一个匹配
+function gotoPrevMatch() {
+  const total = matchElements.value.length
+  if (total === 0) return
+  globalCurrentIndex.value = globalCurrentIndex.value <= 1 ? total : globalCurrentIndex.value - 1
+  highlightCurrentMatch()
+  scrollToCurrent()
+}
+
+// 当关键词变化 / 面板数量 / 折叠状态 / 树版本号变化时，重新收集 match elements
+watch(
+  [globalSearch, columnCount, treeRevision, leftTreeRevision, middleTreeRevision, rightTreeRevision],
+  () => {
+    // DOM 更新后再收集（mark 是 renderNodeKey 渲染出来的）
+    nextTick(() => {
+      // 还要等 vue-json-pretty 完成内部渲染，再多一帧
+      requestAnimationFrame(() => collectMatchElements())
+    })
+  }
+)
 
 // ============ 通用状态 ============
 const errorMsg = ref('')
@@ -1146,6 +1246,44 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   .search-clear {
     margin-left: 0;
   }
+  .search-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .search-position {
+    font-size: 12px;
+    color: $text-secondary;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .search-nav {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid $border;
+    background: $bg-white;
+    color: $text-secondary;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    &:hover:not(:disabled) {
+      border-color: $primary;
+      color: $primary;
+      background: rgba(79, 110, 247, 0.06);
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
 }
 .search-icon {
   font-size: 14px;
@@ -1268,6 +1406,20 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
     border-radius: 3px;
     padding: 0 2px;
     box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.3);
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  // 当前激活的匹配（↑/↓ 定位到的）
+  :deep(.search-current) {
+    background: #fb923c !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 2px #ea580c, 0 2px 4px rgba(234, 88, 12, 0.4) !important;
+    border-radius: 3px;
+    animation: search-pulse 0.4s ease-out;
+  }
+  @keyframes search-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.6), 0 0 0 0 rgba(234, 88, 12, 0.4); }
+    50%  { box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.3), 0 0 0 6px rgba(234, 88, 12, 0.2); }
+    100% { box-shadow: 0 0 0 2px #ea580c, 0 2px 4px rgba(234, 88, 12, 0.4); }
   }
 }
 
