@@ -8,6 +8,7 @@
         <div class="header-search">
           <span class="search-icon">🔍</span>
           <input
+            ref="searchInputRef"
             v-model="globalSearch"
             type="text"
             class="search-input"
@@ -340,7 +341,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, h } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, h } from 'vue'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 
@@ -581,7 +582,36 @@ const reversedHistory = computed(() => {
 // ============ 生命周期 ============
 onMounted(() => {
   loadHistory()
+  // Ctrl/Cmd + F 快捷键：聚焦并全选 header 中的全局搜索框
+  window.addEventListener('keydown', handleSearchShortcut)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleSearchShortcut)
+})
+
+// 全局搜索框的 DOM 引用（template ref，<script setup> 下指向 input 元素本身）
+const searchInputRef = ref(null)
+
+// Ctrl/Cmd + F 快捷键：阻止浏览器自带的页面内查找，改为聚焦到我们的搜索框并全选已有内容
+function handleSearchShortcut(e) {
+  // 仅在按住 Ctrl (Windows/Linux) 或 Cmd (macOS) 时触发
+  if (!(e.ctrlKey || e.metaKey)) return
+  // 排除其它修饰键，避免与 Ctrl+Shift+F 等浏览器/系统快捷键冲突
+  if (e.altKey) return
+  if (e.key !== 'f' && e.key !== 'F') return
+
+  // 阻止浏览器默认的页面内查找行为
+  e.preventDefault()
+  e.stopPropagation()
+
+  const input = searchInputRef.value
+  if (!input) return
+
+  // 聚焦 + 全选已有内容（用户可直接输入覆盖）
+  input.focus()
+  input.select()
+}
 
 // ============ 工具函数 ============
 function tryParseJson(str) {
@@ -1092,11 +1122,9 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   align-items: center;
   gap: 8px;
   flex: 1;
-  max-width: 360px;
-  min-width: 220px;
+  width: 40vw;
   margin-left: 8px;
-  padding: 4px 10px;
-  background: $bg-gray;
+  padding: 6px 10px;
   border: 1px solid $border;
   border-radius: $radius-sm;
   transition: all 0.15s;
