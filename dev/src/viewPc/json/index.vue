@@ -1227,7 +1227,7 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   align-items: center;
   gap: 8px;
   flex: 1;
-  width: 40vw;
+  width: 25vw;
   margin-left: 8px;
   padding: 6px 10px;
   border: 1px solid $border;
