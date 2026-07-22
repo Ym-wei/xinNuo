@@ -12,9 +12,11 @@
             v-model="globalSearch"
             type="text"
             class="search-input"
-            placeholder="搜索 key 或 value…（全局生效）"
-            @keydown.enter="gotoNextMatch"
-            @keydown.shift.enter="gotoPrevMatch"
+            placeholder="搜索 key 或 value…（全局生效，↑↓ 跳转）"
+            @keydown.enter.prevent="gotoNextMatch"
+            @keydown.shift.enter.prevent="gotoPrevMatch"
+            @keydown.up.prevent="gotoPrevMatch"
+            @keydown.down.prevent="gotoNextMatch"
           />
           <!-- 命中计数器 + 上下定位按钮 -->
           <span v-if="globalSearch" class="search-meta">
@@ -24,13 +26,13 @@
             <button
               class="search-nav"
               :disabled="totalMatchCount === 0"
-              title="上一个 (Shift+Enter)"
+              title="上一个 (↑ / Shift+Enter)"
               @click="gotoPrevMatch"
             >↑</button>
             <button
               class="search-nav"
               :disabled="totalMatchCount === 0"
-              title="下一个 (Enter)"
+              title="下一个 (↓ / Enter)"
               @click="gotoNextMatch"
             >↓</button>
             <button class="search-clear" @click="globalSearch = ''" title="清空搜索">✕</button>
@@ -1414,9 +1416,9 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   :deep(.search-current) {
     background: #fb923c !important;
     color: #fff !important;
-    box-shadow: 0 0 0 2px #ea580c, 0 2px 4px rgba(234, 88, 12, 0.4) !important;
     border-radius: 3px;
     animation: search-pulse 0.4s ease-out;
+    text-decoration: underline;
   }
   @keyframes search-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.6), 0 0 0 0 rgba(234, 88, 12, 0.4); }
