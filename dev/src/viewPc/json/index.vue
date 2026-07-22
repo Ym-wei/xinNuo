@@ -4,7 +4,17 @@
     <div class="tool-header">
       <div class="header-left">
         <h1 class="header-title">JSON 美化工具</h1>
-        <input type="text">
+        <!-- 全局搜索：同时作用于单栏 / 双栏 / 三栏所有面板 -->
+        <div class="header-search">
+          <span class="search-icon">🔍</span>
+          <input
+            v-model="globalSearch"
+            type="text"
+            class="search-input"
+            placeholder="搜索 key 或 value…（全局生效）"
+          />
+          <button v-if="globalSearch" class="search-clear" @click="globalSearch = ''" title="清空搜索">✕</button>
+        </div>
       </div>
       <div class="header-actions">
         <div class="column-switch">
@@ -102,7 +112,12 @@
         <div v-if="parsedJson" class="output-section">
           <div class="panel-card">
             <div class="panel-card-header">
-              <h2>📄 美化结果</h2>
+              <h2>
+                📄 美化结果
+                <span v-if="globalSearch" class="match-badge" :title="`${singleSearchCount} 个匹配`">
+                  {{ singleSearchCount }} 匹配
+                </span>
+              </h2>
               <div class="panel-card-actions">
                 <button v-if="inputHidden" class="btn btn-outline btn-sm" @click="inputHidden = false">↩ 还原输入</button>
                 <button class="btn btn-success btn-sm" @click="copyResult">📋 复制</button>
@@ -110,20 +125,6 @@
                   {{ allCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
                 </button>
               </div>
-            </div>
-            <!-- 搜索栏 -->
-            <div class="search-bar">
-              <span class="search-icon">🔍</span>
-              <input
-                v-model="singleSearch"
-                type="text"
-                class="search-input"
-                placeholder="搜索 key 或 value…"
-              />
-              <span v-if="singleSearch" class="search-count">
-                {{ singleSearchCount }} 个匹配
-                <button v-if="singleSearch" class="search-clear" @click="singleSearch = ''" title="清空搜索">✕</button>
-              </span>
             </div>
             <div class="json-tree-wrapper">
               <vue-json-pretty
@@ -157,7 +158,12 @@
           <!-- 左侧面板 -->
           <div class="split-pane" :style="{ width: leftPaneStyle }">
             <div class="pane-header">
-              <span class="pane-label">📄 左侧 · 美化结果</span>
+              <span class="pane-label">
+                📄 左侧 · 美化结果
+                <span v-if="globalSearch" class="match-badge" :title="`左侧 ${leftSearchCount} 个匹配`">
+                  {{ leftSearchCount }}
+                </span>
+              </span>
               <div class="pane-header-actions">
                 <button v-if="leftInputHidden" class="btn btn-outline btn-xs" @click="leftInputHidden = false">↩ 还原</button>
                 <button v-if="leftParsedJson" class="btn btn-success btn-xs" @click="copyLeftResult">📋 复制</button>
@@ -165,19 +171,6 @@
                   {{ leftCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
                 </button>
               </div>
-            </div>
-            <div class="search-bar search-bar-sm">
-              <span class="search-icon">🔍</span>
-              <input
-                v-model="leftSearch"
-                type="text"
-                class="search-input"
-                placeholder="搜索…"
-              />
-              <span v-if="leftSearch" class="search-count">
-                {{ leftSearchCount }}
-                <button class="search-clear" @click="leftSearch = ''" title="清空搜索">✕</button>
-              </span>
             </div>
             <textarea
               v-show="!leftInputHidden"
@@ -222,7 +215,12 @@
           <template v-if="columnCount === 3">
             <div class="split-pane" :style="{ width: middlePaneStyle }">
               <div class="pane-header">
-                <span class="pane-label">📄 中间 · 美化结果</span>
+                <span class="pane-label">
+                  📄 中间 · 美化结果
+                  <span v-if="globalSearch" class="match-badge" :title="`中间 ${middleSearchCount} 个匹配`">
+                    {{ middleSearchCount }}
+                  </span>
+                </span>
                 <div class="pane-header-actions">
                   <button v-if="middleInputHidden" class="btn btn-outline btn-xs" @click="middleInputHidden = false">↩ 还原</button>
                   <button v-if="middleParsedJson" class="btn btn-success btn-xs" @click="copyMiddleResult">📋 复制</button>
@@ -230,19 +228,6 @@
                     {{ middleCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
                   </button>
                 </div>
-              </div>
-              <div class="search-bar search-bar-sm">
-                <span class="search-icon">🔍</span>
-                <input
-                  v-model="middleSearch"
-                  type="text"
-                  class="search-input"
-                  placeholder="搜索…"
-                />
-                <span v-if="middleSearch" class="search-count">
-                  {{ middleSearchCount }}
-                  <button class="search-clear" @click="middleSearch = ''" title="清空搜索">✕</button>
-                </span>
               </div>
               <textarea
                 v-show="!middleInputHidden"
@@ -287,7 +272,12 @@
           <!-- 右侧面板 -->
           <div class="split-pane" :style="{ width: rightPaneStyle }">
             <div class="pane-header">
-              <span class="pane-label">📄 右侧 · 美化结果</span>
+              <span class="pane-label">
+                📄 右侧 · 美化结果
+                <span v-if="globalSearch" class="match-badge" :title="`右侧 ${rightSearchCount} 个匹配`">
+                  {{ rightSearchCount }}
+                </span>
+              </span>
               <div class="pane-header-actions">
                 <button v-if="rightInputHidden" class="btn btn-outline btn-xs" @click="rightInputHidden = false">↩ 还原</button>
                 <button v-if="rightParsedJson" class="btn btn-success btn-xs" @click="copyRightResult">📋 复制</button>
@@ -295,19 +285,6 @@
                   {{ rightCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
                 </button>
               </div>
-            </div>
-            <div class="search-bar search-bar-sm">
-              <span class="search-icon">🔍</span>
-              <input
-                v-model="rightSearch"
-                type="text"
-                class="search-input"
-                placeholder="搜索…"
-              />
-              <span v-if="rightSearch" class="search-count">
-                {{ rightSearchCount }}
-                <button class="search-clear" @click="rightSearch = ''" title="清空搜索">✕</button>
-              </span>
             </div>
             <textarea
               v-show="!rightInputHidden"
@@ -474,12 +451,14 @@ const parsedJson = ref(null)
 const allCollapsed = ref(false)
 const treeRevision = ref(0) // 用于强制 vue-json-pretty 重渲染
 const inputHidden = ref(false) // 点击美化后自动隐藏输入区
-const singleSearch = ref('') // 单栏搜索关键词
+
+// ============ 全局搜索（作用于所有面板） ============
+const globalSearch = ref('')
 // 单栏命中数（computed：通过递归遍历 parsedJson 统计）
-const singleSearchCount = computed(() => countMatchesInData(parsedJson.value, singleSearch.value))
+const singleSearchCount = computed(() => countMatchesInData(parsedJson.value, globalSearch.value))
 // 单栏 renderNodeKey / renderNodeValue：computed，关键词变化即重算
-const singleRenderKey = makeKeyRendererRef(singleSearch)
-const singleRenderValue = makeValueRendererRef(singleSearch)
+const singleRenderKey = makeKeyRendererRef(globalSearch)
+const singleRenderValue = makeValueRendererRef(globalSearch)
 
 // ============ 双栏状态 ============
 const leftInput = ref('')
@@ -487,30 +466,27 @@ const leftParsedJson = ref(null)
 const leftCollapsed = ref(false)
 const leftTreeRevision = ref(0)
 const leftInputHidden = ref(false)
-const leftSearch = ref('')
-const leftSearchCount = computed(() => countMatchesInData(leftParsedJson.value, leftSearch.value))
-const leftRenderKey = makeKeyRendererRef(leftSearch)
-const leftRenderValue = makeValueRendererRef(leftSearch)
+const leftSearchCount = computed(() => countMatchesInData(leftParsedJson.value, globalSearch.value))
+const leftRenderKey = makeKeyRendererRef(globalSearch)
+const leftRenderValue = makeValueRendererRef(globalSearch)
 
 const middleInput = ref('')
 const middleParsedJson = ref(null)
 const middleCollapsed = ref(false)
 const middleTreeRevision = ref(0)
 const middleInputHidden = ref(false)
-const middleSearch = ref('')
-const middleSearchCount = computed(() => countMatchesInData(middleParsedJson.value, middleSearch.value))
-const middleRenderKey = makeKeyRendererRef(middleSearch)
-const middleRenderValue = makeValueRendererRef(middleSearch)
+const middleSearchCount = computed(() => countMatchesInData(middleParsedJson.value, globalSearch.value))
+const middleRenderKey = makeKeyRendererRef(globalSearch)
+const middleRenderValue = makeValueRendererRef(globalSearch)
 
 const rightInput = ref('')
 const rightParsedJson = ref(null)
 const rightCollapsed = ref(false)
 const rightTreeRevision = ref(0)
 const rightInputHidden = ref(false)
-const rightSearch = ref('')
-const rightSearchCount = computed(() => countMatchesInData(rightParsedJson.value, rightSearch.value))
-const rightRenderKey = makeKeyRendererRef(rightSearch)
-const rightRenderValue = makeValueRendererRef(rightSearch)
+const rightSearchCount = computed(() => countMatchesInData(rightParsedJson.value, globalSearch.value))
+const rightRenderKey = makeKeyRendererRef(globalSearch)
+const rightRenderValue = makeValueRendererRef(globalSearch)
 
 // ============ 通用状态 ============
 const errorMsg = ref('')
@@ -1110,17 +1086,38 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 // ============ 搜索栏 ============
-.search-bar {
+// 全局搜索（header 中的搜索框，对所有面板生效）
+.header-search {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: $bg-white;
-  border-bottom: 1px solid $border;
-  flex-shrink: 0;
-}
-.search-bar-sm {
-  padding: 6px 14px;
+  flex: 1;
+  max-width: 360px;
+  min-width: 220px;
+  margin-left: 8px;
+  padding: 4px 10px;
+  background: $bg-gray;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  transition: all 0.15s;
+  &:focus-within {
+    background: $bg-white;
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba(79, 110, 247, 0.1);
+  }
+  .search-input {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 2px 0;
+    font-size: 13px;
+    flex: 1;
+    min-width: 0;
+    &:focus { box-shadow: none; border: none; }
+  }
+  .search-clear {
+    margin-left: 0;
+  }
 }
 .search-icon {
   font-size: 14px;
@@ -1297,6 +1294,31 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   color: $text-muted;
   pointer-events: none;
   user-select: none;
+}
+
+// 搜索命中数量徽章（紧贴面板标题显示）
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 6px;
+  margin-left: 8px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 9px;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.3);
+  cursor: help;
+  user-select: none;
+  // 在标题里跟文字基线对齐
+  position: relative;
+  top: -2px;
 }
 
 .pane-header {
