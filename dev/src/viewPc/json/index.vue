@@ -1061,7 +1061,7 @@ $text-primary: #1e293b;
 $text-secondary: #64748b;
 $text-muted: #94a3b8;
 $bg-white: #ffffff;
-$bg-gray: #f8fafc;
+$bg-gray: #fff;
 $bg-hover: #f1f5f9;
 $border: #e2e8f0;
 $radius: 8px;
@@ -1562,7 +1562,7 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   min-height: 0; // flex 子项收缩关键
-  background: $bg-gray;
+  background: #fff;
 }
 
 .pane-tree-scroll {
