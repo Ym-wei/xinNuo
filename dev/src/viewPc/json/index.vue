@@ -4,7 +4,7 @@
     <div class="tool-header">
       <div class="header-left">
         <h1 class="header-title">JSON 美化工具</h1>
-        <span class="header-subtitle">PC端 · vue-json-pretty · 多栏对比</span>
+        <input type="text">
       </div>
       <div class="header-actions">
         <div class="column-switch">
@@ -111,6 +111,20 @@
                 </button>
               </div>
             </div>
+            <!-- 搜索栏 -->
+            <div class="search-bar">
+              <span class="search-icon">🔍</span>
+              <input
+                v-model="singleSearch"
+                type="text"
+                class="search-input"
+                placeholder="搜索 key 或 value…"
+              />
+              <span v-if="singleSearch" class="search-count">
+                {{ singleSearchCount }} 个匹配
+                <button v-if="singleSearch" class="search-clear" @click="singleSearch = ''" title="清空搜索">✕</button>
+              </span>
+            </div>
             <div class="json-tree-wrapper">
               <vue-json-pretty
                 :key="`single-${treeRevision}`"
@@ -122,6 +136,8 @@
                 :highlight-mouseover-node="true"
                 :selectable-type="true"
                 :collapsed-on-click-branch="true"
+                :render-node-key="singleRenderKey"
+                :render-node-value="singleRenderValue"
                 class="json-tree"
               />
             </div>
@@ -150,6 +166,19 @@
                 </button>
               </div>
             </div>
+            <div class="search-bar search-bar-sm">
+              <span class="search-icon">🔍</span>
+              <input
+                v-model="leftSearch"
+                type="text"
+                class="search-input"
+                placeholder="搜索…"
+              />
+              <span v-if="leftSearch" class="search-count">
+                {{ leftSearchCount }}
+                <button class="search-clear" @click="leftSearch = ''" title="清空搜索">✕</button>
+              </span>
+            </div>
             <textarea
               v-show="!leftInputHidden"
               v-model="leftInput"
@@ -173,6 +202,8 @@
                   :highlight-mouseover-node="true"
                   :selectable-type="true"
                   :collapsed-on-click-branch="true"
+                  :render-node-key="leftRenderKey"
+                  :render-node-value="leftRenderValue"
                   class="json-tree"
                 />
               </div>
@@ -200,6 +231,19 @@
                   </button>
                 </div>
               </div>
+              <div class="search-bar search-bar-sm">
+                <span class="search-icon">🔍</span>
+                <input
+                  v-model="middleSearch"
+                  type="text"
+                  class="search-input"
+                  placeholder="搜索…"
+                />
+                <span v-if="middleSearch" class="search-count">
+                  {{ middleSearchCount }}
+                  <button class="search-clear" @click="middleSearch = ''" title="清空搜索">✕</button>
+                </span>
+              </div>
               <textarea
                 v-show="!middleInputHidden"
                 v-model="middleInput"
@@ -223,6 +267,8 @@
                     :highlight-mouseover-node="true"
                     :selectable-type="true"
                     :collapsed-on-click-branch="true"
+                    :render-node-key="middleRenderKey"
+                    :render-node-value="middleRenderValue"
                     class="json-tree"
                   />
                 </div>
@@ -241,7 +287,7 @@
           <!-- 右侧面板 -->
           <div class="split-pane" :style="{ width: rightPaneStyle }">
             <div class="pane-header">
-              <span class="pane-label">📄 {{ columnCount === 3 ? '右侧' : '右侧' }} · 美化结果</span>
+              <span class="pane-label">📄 右侧 · 美化结果</span>
               <div class="pane-header-actions">
                 <button v-if="rightInputHidden" class="btn btn-outline btn-xs" @click="rightInputHidden = false">↩ 还原</button>
                 <button v-if="rightParsedJson" class="btn btn-success btn-xs" @click="copyRightResult">📋 复制</button>
@@ -249,6 +295,19 @@
                   {{ rightCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
                 </button>
               </div>
+            </div>
+            <div class="search-bar search-bar-sm">
+              <span class="search-icon">🔍</span>
+              <input
+                v-model="rightSearch"
+                type="text"
+                class="search-input"
+                placeholder="搜索…"
+              />
+              <span v-if="rightSearch" class="search-count">
+                {{ rightSearchCount }}
+                <button class="search-clear" @click="rightSearch = ''" title="清空搜索">✕</button>
+              </span>
             </div>
             <textarea
               v-show="!rightInputHidden"
@@ -273,6 +332,8 @@
                   :highlight-mouseover-node="true"
                   :selectable-type="true"
                   :collapsed-on-click-branch="true"
+                  :render-node-key="rightRenderKey"
+                  :render-node-value="rightRenderValue"
                   class="json-tree"
                 />
               </div>
@@ -302,9 +363,110 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, h } from 'vue'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
+
+// ============ 搜索辅助函数 ============
+// vue-json-pretty@2.6.0 没有内置 :search 搜索功能（v2.7+ 才有）。
+// 这里利用 renderNodeKey / renderNodeValue 把 key/value 文本拆成
+// 普通文本段 + 高亮 <mark class="search-match"> 段，返回 VNode 数组。
+//
+// 同时通过一个外部 getter 拿到当前关键词（不直接捕获 ref，使
+// ref 变化时 renderNodeKey 回调被 Vue 重新调用，触发正确高亮）。
+
+/**
+ * 把 text 拆成 [{ type: 'text', value } | { type: 'mark', value }]
+ * keyword 为空时返回 null，让 render 函数直接返回原 defaultKey/defaultValue（性能更好）
+ */
+function splitHighlight(text, keyword) {
+  if (!text) return null
+  if (!keyword) return null
+  const lower = String(text).toLowerCase()
+  const kw = String(keyword).toLowerCase()
+  if (!kw) return null
+  const parts = []
+  let i = 0
+  while (i < text.length) {
+    const idx = lower.indexOf(kw, i)
+    if (idx === -1) {
+      parts.push({ type: 'text', value: text.slice(i) })
+      break
+    }
+    if (idx > i) parts.push({ type: 'text', value: text.slice(i, idx) })
+    parts.push({ type: 'mark', value: text.slice(idx, idx + kw.length) })
+    i = idx + kw.length
+  }
+  // 没有命中时直接返回原文本
+  if (!parts.some(p => p.type === 'mark')) return null
+  return parts
+}
+
+function renderHighlighted(text, keyword) {
+  const parts = splitHighlight(text, keyword)
+  if (!parts) return text
+  return parts.map((p, idx) =>
+    p.type === 'mark'
+      ? h('mark', { class: 'search-match', key: `m${idx}` }, p.value)
+      : p.value
+  )
+}
+
+/**
+ * 统计整个 JSON 中 key 与 value 的命中总数（不区分大小写）。
+ * Vue 渲染回调对每个节点调用一次，通过这个外部函数累计。
+ */
+function countMatchesInData(data, keyword) {
+  if (!keyword || !data) return 0
+  const kw = String(keyword).toLowerCase()
+  if (!kw) return 0
+  let count = 0
+  const lower = (v) => (v === null || v === undefined ? '' : String(v).toLowerCase())
+  const kwCount = (v) => {
+    const s = lower(v)
+    if (!s) return 0
+    let n = 0, i = 0
+    while ((i = s.indexOf(kw, i)) !== -1) { n++; i += kw.length }
+    return n
+  }
+  const walk = (node) => {
+    if (Array.isArray(node)) {
+      node.forEach(walk)
+    } else if (node !== null && typeof node === 'object') {
+      Object.entries(node).forEach(([k, v]) => {
+        count += kwCount(k)
+        walk(v)
+      })
+    } else {
+      // 叶子（string / number / boolean / null）
+      // 注意：null/undefined 的显示文字是 'null'/'undefined'（来自 vue-json-pretty 内部）
+      if (node === null) { count += kwCount('null'); return }
+      if (node === undefined) { count += kwCount('undefined'); return }
+      count += kwCount(typeof node === 'string' ? `"${node}"` : node)
+    }
+  }
+  walk(data)
+  return count
+}
+
+// 4 个面板各有一组独立 ref。这里把 render 函数都做成
+// 「computed，每次关键词变化都会返回一个新的函数引用」，
+// 这样 Vue 检测到 prop 变化会触发子组件重渲染，从而调用 renderNodeKey / renderNodeValue。
+
+/**
+ * 工厂：返回一个 computed ref，getter 拿到当前关键词后返回真正的 render 函数。
+ * 关键：computed 只在依赖变化时才会生成新函数，否则返回同一个引用，
+ * 避免 vue-json-pretty 每次输入都重新 mount 子树。
+ */
+const makeKeyRendererRef = (kwRef) => computed(() => {
+  const kw = kwRef.value
+  return ({ defaultKey }) => renderHighlighted(defaultKey, kw)
+})
+
+const makeValueRendererRef = (kwRef) => computed(() => {
+  const kw = kwRef.value
+  return ({ defaultValue }) => renderHighlighted(defaultValue, kw)
+})
 
 // ============ 单栏状态 ============
 const jsonInput = ref('')
@@ -312,6 +474,12 @@ const parsedJson = ref(null)
 const allCollapsed = ref(false)
 const treeRevision = ref(0) // 用于强制 vue-json-pretty 重渲染
 const inputHidden = ref(false) // 点击美化后自动隐藏输入区
+const singleSearch = ref('') // 单栏搜索关键词
+// 单栏命中数（computed：通过递归遍历 parsedJson 统计）
+const singleSearchCount = computed(() => countMatchesInData(parsedJson.value, singleSearch.value))
+// 单栏 renderNodeKey / renderNodeValue：computed，关键词变化即重算
+const singleRenderKey = makeKeyRendererRef(singleSearch)
+const singleRenderValue = makeValueRendererRef(singleSearch)
 
 // ============ 双栏状态 ============
 const leftInput = ref('')
@@ -319,16 +487,30 @@ const leftParsedJson = ref(null)
 const leftCollapsed = ref(false)
 const leftTreeRevision = ref(0)
 const leftInputHidden = ref(false)
+const leftSearch = ref('')
+const leftSearchCount = computed(() => countMatchesInData(leftParsedJson.value, leftSearch.value))
+const leftRenderKey = makeKeyRendererRef(leftSearch)
+const leftRenderValue = makeValueRendererRef(leftSearch)
+
 const middleInput = ref('')
 const middleParsedJson = ref(null)
 const middleCollapsed = ref(false)
 const middleTreeRevision = ref(0)
 const middleInputHidden = ref(false)
+const middleSearch = ref('')
+const middleSearchCount = computed(() => countMatchesInData(middleParsedJson.value, middleSearch.value))
+const middleRenderKey = makeKeyRendererRef(middleSearch)
+const middleRenderValue = makeValueRendererRef(middleSearch)
+
 const rightInput = ref('')
 const rightParsedJson = ref(null)
 const rightCollapsed = ref(false)
 const rightTreeRevision = ref(0)
 const rightInputHidden = ref(false)
+const rightSearch = ref('')
+const rightSearchCount = computed(() => countMatchesInData(rightParsedJson.value, rightSearch.value))
+const rightRenderKey = makeKeyRendererRef(rightSearch)
+const rightRenderValue = makeValueRendererRef(rightSearch)
 
 // ============ 通用状态 ============
 const errorMsg = ref('')
@@ -431,6 +613,22 @@ function tryParseJson(str) {
   catch { return undefined }
 }
 
+// 递归对对象的 key 按 A-Z 排序（数组保持原顺序）
+function sortKeysDeep(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(sortKeysDeep)
+  }
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj)
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .reduce((acc, key) => {
+        acc[key] = sortKeysDeep(obj[key])
+        return acc
+      }, {})
+  }
+  return obj
+}
+
 function showError(msg, duration = 3000) {
   errorMsg.value = msg
   setTimeout(() => { errorMsg.value = '' }, duration)
@@ -457,11 +655,12 @@ function formatJson() {
   if (!trimmed) { showError('请输入 JSON 字符串'); return }
   const parsed = tryParseJson(trimmed)
   if (parsed === undefined) { showError('JSON 格式错误，请检查输入'); return }
-  parsedJson.value = parsed
+  const sorted = sortKeysDeep(parsed) // 递归 A-Z 排序
+  parsedJson.value = sorted
   allCollapsed.value = false
   treeRevision.value++ // 触发树重渲染
   inputHidden.value = true // 隐藏输入区
-  upsertHistory(parsed) // 自动保存（去重 push）
+  upsertHistory(sorted) // 自动保存（去重 push，存的也是排序后的）
 }
 
 function compressJson() {
@@ -497,9 +696,10 @@ function formatLeft() {
   if (!trimmed) { showError('左侧请输入 JSON'); return }
   const parsed = tryParseJson(trimmed)
   if (parsed === undefined) { showError('左侧 JSON 格式错误'); return }
-  leftParsedJson.value = parsed
+  const sorted = sortKeysDeep(parsed)
+  leftParsedJson.value = sorted
   leftInputHidden.value = true // 隐藏输入区
-  upsertHistory(parsed) // 自动保存
+  upsertHistory(sorted) // 自动保存
 }
 
 function formatRight() {
@@ -507,9 +707,10 @@ function formatRight() {
   if (!trimmed) { showError('右侧请输入 JSON'); return }
   const parsed = tryParseJson(trimmed)
   if (parsed === undefined) { showError('右侧 JSON 格式错误'); return }
-  rightParsedJson.value = parsed
+  const sorted = sortKeysDeep(parsed)
+  rightParsedJson.value = sorted
   rightInputHidden.value = true // 隐藏输入区
-  upsertHistory(parsed) // 自动保存
+  upsertHistory(sorted) // 自动保存
 }
 
 function formatMiddle() {
@@ -517,9 +718,10 @@ function formatMiddle() {
   if (!trimmed) { showError('中间请输入 JSON'); return }
   const parsed = tryParseJson(trimmed)
   if (parsed === undefined) { showError('中间 JSON 格式错误'); return }
-  middleParsedJson.value = parsed
+  const sorted = sortKeysDeep(parsed)
+  middleParsedJson.value = sorted
   middleInputHidden.value = true // 隐藏输入区
-  upsertHistory(parsed) // 自动保存
+  upsertHistory(sorted) // 自动保存
 }
 
 function clearLeft() {
@@ -907,6 +1109,69 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   &-xs { padding: 3px 8px; font-size: 12px; }
 }
 
+// ============ 搜索栏 ============
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: $bg-white;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+}
+.search-bar-sm {
+  padding: 6px 14px;
+}
+.search-icon {
+  font-size: 14px;
+  color: $text-muted;
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  background: $bg-gray;
+  color: $text-primary;
+  transition: all 0.15s;
+  &:focus {
+    border-color: $primary;
+    background: $bg-white;
+    box-shadow: 0 0 0 2px rgba(79, 110, 247, 0.1);
+  }
+  &::placeholder { color: $text-muted; }
+}
+.search-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: $text-muted;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.search-clear {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: $text-muted;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  &:hover { background: $border; color: $danger; }
+}
+
 // ============ 单栏输入 ============
 .input-section {
   flex-shrink: 0;
@@ -971,6 +1236,14 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   :deep(.vjp-arrow) { color: #94a3b8 !important; }
   :deep(.vjp-node) { transition: background 0.1s; }
   :deep(.vjp-node:hover) { background: rgba(79, 110, 247, 0.05); border-radius: 3px; }
+  // 搜索高亮（自定义 renderNodeKey / renderNodeValue 输出的 <mark> 标签）
+  :deep(.search-match) {
+    background: #fef08a !important;
+    color: #713f12 !important;
+    border-radius: 3px;
+    padding: 0 2px;
+    box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.3);
+  }
 }
 
 // ============ 双栏布局 ============
