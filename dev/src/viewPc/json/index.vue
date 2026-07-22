@@ -523,12 +523,13 @@ const totalMatchCount = computed(() =>
 )
 
 // 收集当前可见的所有 <mark class="search-match"> 元素，按 DOM 顺序
+// 单栏用 .json-tree-wrapper，双/三栏用 .pane-tree-scroll，两个都查
 function collectMatchElements() {
   const els = []
-  const wrappers = document.querySelectorAll('.json-tree-wrapper')
-  wrappers.forEach(w => {
-    w.querySelectorAll('mark.search-match').forEach(m => els.push(m))
-  })
+  // 单栏 + 三个分栏的 wrapper 都要覆盖
+  document
+    .querySelectorAll('.json-tree-wrapper mark.search-match, .pane-tree-scroll mark.search-match')
+    .forEach(m => els.push(m))
   matchElements.value = els
   // 给每个元素打上全局序号
   els.forEach((el, i) => el.setAttribute('data-match-index', String(i + 1)))
