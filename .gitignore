@@ -22,3 +22,7 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# 临时调试脚本（PowerShell）
+*.ps1
+!dev/**/*.ps1
