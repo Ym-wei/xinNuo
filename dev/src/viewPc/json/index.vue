@@ -142,7 +142,7 @@
                 </span>
               </h2>
               <div class="panel-card-actions">
-                <button v-if="inputHidden" class="btn btn-outline btn-sm" @click="inputHidden = false">↩ 还原输入</button>
+                <button v-if="inputHidden" class="btn btn-outline btn-sm" @click="clearInput">🗑 清空还原</button>
                 <button class="btn btn-success btn-sm" @click="copyResult">📋 复制</button>
                 <button class="btn btn-secondary btn-sm" @click="toggleAllNodes">
                   {{ allCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
@@ -188,7 +188,7 @@
                 </span>
               </span>
               <div class="pane-header-actions">
-                <button v-if="leftInputHidden" class="btn btn-outline btn-xs" @click="leftInputHidden = false">↩ 还原</button>
+                <button v-if="leftInputHidden" class="btn btn-outline btn-xs" @click="clearLeft">🗑 清空还原</button>
                 <button v-if="leftParsedJson" class="btn btn-success btn-xs" @click="copyLeftResult">📋 复制</button>
                 <button v-if="leftParsedJson" class="btn btn-secondary btn-xs" @click="toggleLeftCollapse">
                   {{ leftCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
@@ -245,7 +245,7 @@
                   </span>
                 </span>
                 <div class="pane-header-actions">
-                  <button v-if="middleInputHidden" class="btn btn-outline btn-xs" @click="middleInputHidden = false">↩ 还原</button>
+                  <button v-if="middleInputHidden" class="btn btn-outline btn-xs" @click="clearMiddle">🗑 清空还原</button>
                   <button v-if="middleParsedJson" class="btn btn-success btn-xs" @click="copyMiddleResult">📋 复制</button>
                   <button v-if="middleParsedJson" class="btn btn-secondary btn-xs" @click="toggleMiddleCollapse">
                     {{ middleCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
@@ -302,7 +302,7 @@
                 </span>
               </span>
               <div class="pane-header-actions">
-                <button v-if="rightInputHidden" class="btn btn-outline btn-xs" @click="rightInputHidden = false">↩ 还原</button>
+                <button v-if="rightInputHidden" class="btn btn-outline btn-xs" @click="clearRight">🗑 清空还原</button>
                 <button v-if="rightParsedJson" class="btn btn-success btn-xs" @click="copyRightResult">📋 复制</button>
                 <button v-if="rightParsedJson" class="btn btn-secondary btn-xs" @click="toggleRightCollapse">
                   {{ rightCollapsed ? '📂 全部展开' : '📂 全部折叠' }}
