@@ -47,7 +47,31 @@ module.exports = {
       config.optimization.minimize(true)
       // 分割代码
       config.optimization.splitChunks({
-        chunks: 'all'
+        chunks: 'all',
+        cacheGroups: {
+          // 默认 vendor：跨多个 chunk 共享的依赖
+          defaultVendors: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: -10,
+            reuseExistingChunk: true
+          },
+          // JSON 美化页专用：vue-json-pretty 只在 /json/index 使用
+          // 单独打成 chunk，只在该路由被访问时下载
+          jsonToolVendor: {
+            test: /[\\/]node_modules[\\/](vue-json-pretty)[\\/]/,
+            name: 'json-tool-vendor',
+            chunks: 'async', // 只在异步加载的 chunk 出现该模块时才单独打包
+            priority: 20,    // 高于 defaultVendors（-10），确保优先生效
+            reuseExistingChunk: true
+          },
+          // 默认兜底
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true
+          }
+        }
       })
       config
         .plugin('compression-webpack-plugin')
