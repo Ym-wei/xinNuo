@@ -1,9 +1,9 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import PageRouter from './page'
+import { pcRouterMap } from './page'
 
 const router = createRouter({
   history: createWebHashHistory('/xinNuo/'),
-  routes: [...PageRouter]
+  routes: [...pcRouterMap]
 })
 
 router.beforeEach((to, from, next) => {
