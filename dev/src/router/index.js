@@ -7,7 +7,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title || '杨昕诺'
+  document.title = to.meta.title || 'Ming'
   next()
 })
 

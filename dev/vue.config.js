@@ -87,7 +87,7 @@ module.exports = {
       // 生产环境不再注入 CDN；保留 title 配置
       config.plugin('html')
         .tap(args => {
-          args[0].title = '杨昕诺'
+          args[0].title = 'Ming'
           return args
         })
       // 不再设置 externals，库都走本地打包
