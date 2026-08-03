@@ -366,6 +366,10 @@
 import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch, h } from 'vue'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
+import {useRoute} from "vue-router";
+
+
+const route = useRoute()
 
 // ============ 搜索辅助函数 ============
 // vue-json-pretty@2.6.0 没有内置 :search 搜索功能（v2.7+ 才有）。
@@ -1049,6 +1053,19 @@ function toggleHistory() {
   showHistory.value = !showHistory.value
   if (showHistory.value) loadHistory()
 }
+
+
+watch(
+    () => route.query,
+    (val) => {
+      const  { data}  = val || {}
+      if (!data) return
+
+      jsonInput.value = data
+      nextTick(() => formatJson())
+    },
+    { immediate: true }
+)
 </script>
 
 <style lang="scss" scoped>
